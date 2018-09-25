@@ -6,9 +6,6 @@
 //  Copyright © 2017 leocardz.com. All rights reserved.
 //
 
-import Foundation
-import UIKit
-
 public class StyleKit: NSObject {
 
     // Drawing Methods
@@ -1190,7 +1187,7 @@ open class NFDownloadButton: UIButton {
 
     }
 
-    @IBInspectable open var buttonBackgroundColor: UIColor? {
+    @IBInspectable var buttonBackgroundColor: UIColor? {
 
         didSet {
 
@@ -1200,7 +1197,7 @@ open class NFDownloadButton: UIButton {
 
     }
 
-    @IBInspectable open var initialColor: UIColor? {
+    @IBInspectable var initialColor: UIColor? {
 
         didSet {
 
@@ -1210,7 +1207,7 @@ open class NFDownloadButton: UIButton {
 
     }
 
-    @IBInspectable open var rippleColor: UIColor? {
+    @IBInspectable var rippleColor: UIColor? {
 
         didSet {
 
@@ -1220,7 +1217,7 @@ open class NFDownloadButton: UIButton {
 
     }
 
-    @IBInspectable open var downloadColor: UIColor? {
+    @IBInspectable var downloadColor: UIColor? {
 
         didSet {
 
@@ -1230,7 +1227,7 @@ open class NFDownloadButton: UIButton {
 
     }
 
-    @IBInspectable open var deviceColor: UIColor? {
+    @IBInspectable var deviceColor: UIColor? {
 
         didSet {
 
@@ -1298,18 +1295,18 @@ open class NFDownloadButton: UIButton {
         super.init(coder: aDecoder)
 
     }
-    
+
     // MARK: - Lifecyle
     override open func awakeFromNib() {
-        
+
         draw()
-        
+
     }
 
 
     // MARK: - Properties
     var keyPath: String = "toDownloadManipulable"
-    open var palette: Palette = Palette()
+    var palette: Palette = Palette()
     open var delegate: NFDownloadButtonDelegate?
     open var downloadPercent: CGFloat = 0.0 {
         willSet {
@@ -1351,7 +1348,7 @@ open class NFDownloadButton: UIButton {
                     Flow.async {
 
                         self.animate(keyPath: "toDownloadManipulable")
-                        
+
                     }
 
                     return
@@ -1374,7 +1371,7 @@ open class NFDownloadButton: UIButton {
                         self.animate(to: 0, keyPath: "readyToDownloadManipulable")
 
                     }
-                    
+
                     return
 
                 case .downloaded:
@@ -1384,7 +1381,7 @@ open class NFDownloadButton: UIButton {
                         self.animate(duration: 1, keyPath: "downloadedManipulable")
 
                     }
-                    
+
                     return
 
                 }
@@ -1461,135 +1458,137 @@ open class NFDownloadButton: UIButton {
         layer.readyToDownloadManipulable = 0.0
         layer.downloadedManipulable = 0.0
         layer.checkRevealManipulable = 0.0
-        
+
     }
-    
+
     func draw() {
-        
+
         downloadState = downloadState ?? .toDownload
         buttonStyle = buttonStyle ?? .iOS
-        
+
         needsDisplay()
 
     }
-    
+
     func needsDisplay() {
-        
+
         layer.contentsScale = UIScreen.main.scale
         layer.setNeedsDisplay()
-        
+
     }
-    
+
     fileprivate func animate(duration: TimeInterval = 0, delay: TimeInterval = 0, from: CGFloat = 0, to: CGFloat = 1, keyPath: String) -> Void {
-        
+
         guard let layer: NFDownloadButtonLayer = layer as? NFDownloadButtonLayer else { return }
-        
+
         self.keyPath = keyPath
-        
+
         let animation = CABasicAnimation(keyPath: keyPath)
         animation.beginTime = CACurrentMediaTime() + delay
         animation.duration = duration
-        animation.fillMode = kCAFillModeBoth
-        animation.timingFunction = CAMediaTimingFunction.init(name: kCAMediaTimingFunctionEaseOut)
+        animation.fillMode = CAMediaTimingFillMode.forwards
+        animation.timingFunction = CAMediaTimingFunction.init(name: CAMediaTimingFunctionName.easeOut)
         animation.fromValue = from
         animation.toValue = to
         animation.delegate = self
-        
+
         layer.add(animation, forKey: nil)
-        
+
         Flow.async {
-            
+
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             self.updateManipulable(layer, keyPath, to)
             CATransaction.commit()
-            
+
         }
-        
+
     }
-    
+
     private func updateManipulable(_ layer: NFDownloadButtonLayer, _ keyPath: String, _ value: CGFloat) {
-        
+
         switch keyPath {
-            
+
         case "toDownloadManipulable":
-            
+
             layer.toDownloadManipulable = value
             return
-            
+
         case "rippleManipulable":
-            
+
             layer.rippleManipulable = value
             return
-            
+
         case "dashMoveManipulable":
-            
+
             layer.dashMoveManipulable = value
             return
-            
+
         case "readyToDownloadManipulable":
-            
+
             layer.readyToDownloadManipulable = value
             return
-            
+
         case "downloadedManipulable":
-            
+
             layer.downloadedManipulable = value
             return
-            
+
         case "checkRevealManipulable":
-            
+
             layer.checkRevealManipulable = value
             return
-            
+
         default:
-            
+
             return
-            
+
         }
-        
+
     }
-    
+
 }
 
 extension NFDownloadButton: CAAnimationDelegate {
-    
+
     public func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
-        
+
         guard let keyPath = (anim as? CABasicAnimation)?.keyPath else { return }
-        
+
         if keyPath == "rippleManipulable" {
-            
+
             animate(duration: 1, keyPath: "dashMoveManipulable")
-            
+
         } else if keyPath == "downloadedManipulable" {
-            
+
             if !isDownloaded {
-                
+
                 animate(duration: 0.5, keyPath: "checkRevealManipulable")
-                
+
             }
-            
+
         }
-        
+
         if keyPath == "toDownloadManipulable" {
-            
+
             delegate?.stateChanged(button: self, newState: .toDownload)
-            
+
         } else if keyPath == "rippleManipulable" {
-            
+
             delegate?.stateChanged(button: self, newState: .willDownload)
-            
+
         } else if keyPath == "dashMoveManipulable" {
-            
+
             delegate?.stateChanged(button: self, newState: .readyToDownload)
-            
+
         } else if keyPath == "checkRevealManipulable" {
-            
+
             delegate?.stateChanged(button: self, newState: .downloaded)
-            
+
         }
-        
+
     }
-    
+
 }
+
+
